@@ -17,8 +17,7 @@ from rest_framework import status
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def event_list(request):
-    # authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsAuthenticated]
+    
     if request.method == 'GET':
         return get_request(request)
 
@@ -39,14 +38,13 @@ def get_request(request):
     return Response(serializers.data)
 
 
-
+#############################################################
 
 @api_view(['GET','PUT','DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def event_details(request,pk):
-    # authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsAuthenticated]
+
     try:
         Events = models.Events.objects.get(pk=pk)
     except models.Events.DoesNotExist:
@@ -91,59 +89,87 @@ def  delete_request_event_details(request,Events):
 def participants_list(request):
     
     if request.method == 'GET':
-        participants = models.Participants.objects.all()
-        serializers = ParticipantSerializer(participants,many=True)
-        return Response(serializers.data)
+        return get_participants_list(request)
+        
 
     elif(request.method == 'POST'):
-        serializers = ParticipantSerializer(data=request.data)
-        if serializers.is_valid():
-           
-            for i in request.data['events_registerd']:
-                # print(i)
-                # print(models.Events.objects.filter(event_id=i).values('vacancy')[0]['vacancy'])
-                a=models.Events.objects.get(event_id=i)
-                count=a.vacancy
+        return post_participants_list(request)
+        
+
+def get_participants_list(request):
+    participants = models.Participants.objects.all()
+    serializers = ParticipantSerializer(participants,many=True)
+    return Response(serializers.data)
+
+
+def post_participants_list(request):
+    serializers = ParticipantSerializer(data=request.data)
+
+    if serializers.is_valid():
+        for i in request.data['events_registerd']:
+            # print(i)
+            # print(models.Events.objects.filter(event_id=i).values('vacancy')[0]['vacancy'])
+            a=models.Events.objects.get(event_id=i)
+            count=a.vacancy
+            if count>0:
                 count=count-1
                 a.vacancy=count
                 a.save()
-                # models.Events.objects.filter(event_id=i).values('vacancy')[0]['vacancy']=models.Events.objects.filter(event_id=i).values('vacancy')[0]['vacancy']-1
-            # print(request.data['events_registersssd'])
+            else:
+                return Response({"error": "event_capacity_full"}, status=status.HTTP_204_NO_CONTENT)
+            
 
-            serializers.save()
-            return Response(serializers.data,status=status.HTTP_201_CREATED)
-        return Response(serializers.errors,status=status.HTTP_400_BAD_REQUEST)
+        serializers.save()
+        return Response(serializers.data,status=status.HTTP_201_CREATED)
+    return Response(serializers.errors,status=status.HTTP_400_BAD_REQUEST)
 
-
+    
+########################################################################
 
 @api_view(['GET','PUT','DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def participant_details(request,pk):
-    # authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsAuthenticated]
     try:
         participant = models.Participants.objects.get(participant_id=pk)
     except models.Participants.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
     
     if request.method == 'GET':
-        serializers = ParticipantSerializer(participant)
-        return Response(serializers.data)
+        return get_request_participant_details(request,participant)
 
     elif request.method == 'PUT':
-        serializers = ParticipantSerializer(participant,request.data)
-        if serializers.is_valid():
-            serializers.save()
-            return Response(serializers.data)
-        return Response(serializers.errors,status=status.HTTP_400_BAD_REQUEST)
+        return put_request_participant_details(request,participant)
 
     elif request.method == 'DELETE':
-        participant.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT) 
+         return delete_request_participant_details(request,participant)
 
 
 
+def get_request_participant_details(request,participant):
+    serializers = ParticipantSerializer(participant)
+    return Response(serializers.data)
+
+def put_request_participant_details(request,participant):
+    serializers = ParticipantSerializer(participant,request.data)
+    if serializers.is_valid():
+        serializers.save()
+        return Response(serializers.data)
+    return Response(serializers.errors,status=status.HTTP_400_BAD_REQUEST)
+
+
+def delete_request_participant_details(request,participant):
+    print(participant.events_registerd)
+    # participant.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+
+
+
+######################################################################################
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -154,20 +180,50 @@ def single_event(request,pk):
 
 
 
-from rest_framework import generics, permissions
-from rest_framework.response import Response
-from knox.models import AuthToken
-from .serializers import UserSerializer, RegisterSerializer
 
-# Register API
-class register(generics.GenericAPIView):
-    serializer_class = RegisterSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response({
-        "user": UserSerializer(user, context=self.get_serializer_context()).data,
-        "token": AuthToken.objects.create(user)[1]
-        })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# from rest_framework import generics, permissions
+# from rest_framework.response import Response
+# from knox.models import AuthToken
+# from .serializers import UserSerializer, RegisterSerializer
+
+# # Register API
+# class register(generics.GenericAPIView):
+#     serializer_class = RegisterSerializer
+
+#     def post(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         user = serializer.save()
+#         return Response({
+#         "user": UserSerializer(user, context=self.get_serializer_context()).data,
+#         "token": AuthToken.objects.create(user)[1]
+#         })
