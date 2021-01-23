@@ -18,7 +18,6 @@ from rest_framework.authtoken.models import Token
 # Create your views here.
   
 @api_view(['GET','POST'])
-# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def event_list(request):
     
@@ -45,7 +44,6 @@ def get_request(request):
 #############################################################
 
 @api_view(['GET','PUT','DELETE'])
-# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def event_details(request,pk):
 
@@ -91,7 +89,6 @@ def  delete_request_event_details(request,Events):
 
 
 @api_view(['GET','POST'])   
-# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 
 def participants_list(request):
@@ -121,7 +118,7 @@ def post_participants_list(request):
                 a.vacancy=count
                 a.save()
             else:
-                return Response({"error": "event_capacity_full"}, status=status.HTTP_204_NO_CONTENT)
+                return Response({"error": "Event capacity is full"}, status=status.HTTP_204_NO_CONTENT)
             
 
         serializers.save()
@@ -132,7 +129,6 @@ def post_participants_list(request):
 ########################################################################
 
 @api_view(['GET','PUT','DELETE'])
-# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def participant_details(request,pk):
     try:
@@ -179,13 +175,8 @@ def delete_request_participant_details(request,participant):
 
 
 
-
-
-
-
 ######################################################################################
 @api_view(['GET'])
-# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def single_event(request,pk):
     participant_all = models.Participants.objects.all().filter(events_registerd=pk)
