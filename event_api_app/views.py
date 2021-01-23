@@ -41,8 +41,6 @@ def get_request(request):
     return Response(serializers.data)
 
 
-#############################################################
-
 @api_view(['GET','PUT','DELETE'])
 @permission_classes([IsAuthenticated])
 def event_details(request,pk):
@@ -67,8 +65,6 @@ def event_details(request,pk):
         return delete_request_event_details(request,Events)
 
 
-
-
 def  get_request_event_details(request,Events):  
     serializers = EventSerializer(Events)
     return Response(serializers.data)  
@@ -85,8 +81,6 @@ def  delete_request_event_details(request,Events):
     return Response(status=status.HTTP_204_NO_CONTENT) 
 
   
-#############################################################################
-
 
 @api_view(['GET','POST'])   
 @permission_classes([IsAuthenticated])
@@ -126,7 +120,6 @@ def post_participants_list(request):
     return Response(serializers.errors,status=status.HTTP_400_BAD_REQUEST)
 
     
-########################################################################
 
 @api_view(['GET','PUT','DELETE'])
 @permission_classes([IsAuthenticated])
@@ -175,7 +168,6 @@ def delete_request_participant_details(request,participant):
 
 
 
-######################################################################################
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def single_event(request,pk):
