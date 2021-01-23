@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from rest_framework.parsers import JSONParser
 from . import models    
-from .serializers import EventSerializer,ParticipantSerializer,SingleEventSerializer
+from .serializers import EventSerializer,ParticipantSerializer,SingleEventSerializer,RegistrationSerializer
 from rest_framework import generics
 from rest_framework import mixins
 from rest_framework.authentication import TokenAuthentication
@@ -10,11 +10,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view,permission_classes,authentication_classes
 from rest_framework.response import Response
 from rest_framework import status
+from django.conf import settings
+from django.db.models.signals import post_save
+
+from rest_framework.authtoken.models import Token
 
 # Create your views here.
-
+  
 @api_view(['GET','POST'])
-@authentication_classes([TokenAuthentication])
+# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def event_list(request):
     
@@ -41,7 +45,7 @@ def get_request(request):
 #############################################################
 
 @api_view(['GET','PUT','DELETE'])
-@authentication_classes([TokenAuthentication])
+# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def event_details(request,pk):
 
@@ -49,7 +53,7 @@ def event_details(request,pk):
         Events = models.Events.objects.get(pk=pk)
     except models.Events.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
-
+    
     if request.method == 'GET':
        return get_request_event_details(request,Events)
 
@@ -83,7 +87,7 @@ def  delete_request_event_details(request,Events):
 
 
 @api_view(['GET','POST'])   
-@authentication_classes([TokenAuthentication])
+# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 
 def participants_list(request):
@@ -91,7 +95,6 @@ def participants_list(request):
     if request.method == 'GET':
         return get_participants_list(request)
         
-
     elif(request.method == 'POST'):
         return post_participants_list(request)
         
@@ -106,9 +109,7 @@ def post_participants_list(request):
     serializers = ParticipantSerializer(data=request.data)
 
     if serializers.is_valid():
-        for i in request.data['events_registerd']:
-            # print(i)
-            # print(models.Events.objects.filter(event_id=i).values('vacancy')[0]['vacancy'])
+        for i in request.data['events_registerd']:  
             a=models.Events.objects.get(event_id=i)
             count=a.vacancy
             if count>0:
@@ -127,7 +128,7 @@ def post_participants_list(request):
 ########################################################################
 
 @api_view(['GET','PUT','DELETE'])
-@authentication_classes([TokenAuthentication])
+# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def participant_details(request,pk):
     try:
@@ -159,8 +160,14 @@ def put_request_participant_details(request,participant):
 
 
 def delete_request_participant_details(request,participant):
-    print(participant.events_registerd)
-    # participant.delete()
+    event=participant.events_registerd.values_list('pk', flat=True)
+    for i in event.iterator():
+        a=models.Events.objects.get(event_id=i)
+        count=a.vacancy
+        count=count+1
+        a.vacancy=count
+        a.save()
+    participant.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -171,7 +178,7 @@ def delete_request_participant_details(request,participant):
 
 ######################################################################################
 @api_view(['GET'])
-@authentication_classes([TokenAuthentication])
+# @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def single_event(request,pk):
     participant_all = models.Participants.objects.all().filter(events_registerd=pk)
@@ -179,6 +186,21 @@ def single_event(request,pk):
     return Response(serializers.data)
 
 
+@api_view(['POST',])
+def registration_view(request):
+    if request.method == 'POST':
+        serializer = RegistrationSerializer(data=request.data)
+        data={}
+        if serializer.is_valid():
+            account = serializer.save() 
+            data['response']="succesfully registered new user"
+            data['email']=account.email
+            data['username']=account.username
+            token = Token.objects.get(user=account).key
+            data['token']=token
+        else:
+            data=serializer.errors
+        return Response(data)        
 
 
 
@@ -208,22 +230,3 @@ def single_event(request,pk):
 
 
 
-
-
-# from rest_framework import generics, permissions
-# from rest_framework.response import Response
-# from knox.models import AuthToken
-# from .serializers import UserSerializer, RegisterSerializer
-
-# # Register API
-# class register(generics.GenericAPIView):
-#     serializer_class = RegisterSerializer
-
-#     def post(self, request, *args, **kwargs):
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         user = serializer.save()
-#         return Response({
-#         "user": UserSerializer(user, context=self.get_serializer_context()).data,
-#         "token": AuthToken.objects.create(user)[1]
-#         })
