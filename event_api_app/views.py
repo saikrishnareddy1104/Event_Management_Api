@@ -53,6 +53,10 @@ def event_details(request,pk):
         Events = models.Events.objects.get(pk=pk)
     except models.Events.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    user=request.user
+    if Events.organiser_email != user:
+        return Response({'response':'you dont have permission to view/edit'})  
     
     if request.method == 'GET':
        return get_request_event_details(request,Events)
@@ -135,6 +139,9 @@ def participant_details(request,pk):
         participant = models.Participants.objects.get(participant_id=pk)
     except models.Participants.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    if participant.email != str(request.user):
+        return Response({'response':'you dont have permission to view/edit'}) 
     
     if request.method == 'GET':
         return get_request_participant_details(request,participant)
